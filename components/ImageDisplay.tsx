@@ -8,9 +8,12 @@ import {
   TouchableOpacity, 
   Share, 
   Alert,
-  Image
+  Image,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library';
 
 interface ImageDisplayProps {
   imageUrl: string | null;
@@ -25,6 +28,7 @@ const imageHeight = imageWidth * 1.2; // 3:4 aspect ratio
 
 export default function ImageDisplay({ imageUrl, isLoading, error, prompt }: ImageDisplayProps) {
   const [imageError, setImageError] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const handleShare = async () => {
     if (!imageUrl) return;
@@ -43,11 +47,63 @@ export default function ImageDisplay({ imageUrl, isLoading, error, prompt }: Ima
   const handleSave = async () => {
     if (!imageUrl) return;
     
-    Alert.alert(
-      'Save Image',
-      'To save this image, press and hold on the image, then select "Save Image" from the menu.',
-      [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
-    );
+    try {
+      setDownloading(true);
+      
+      // Request permissions first
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please grant permission to save images to your device.',
+          [{ text: 'OK' }]
+        );
+        setDownloading(false);
+        return;
+      }
+      
+      // Create a filename based on the prompt and current time
+      const timestamp = new Date().getTime();
+      const promptText = prompt ? prompt.substring(0, 20).replace(/[^a-zA-Z0-9]/g, '_') : 'ai_image';
+      const filename = `${promptText}_${timestamp}.jpg`;
+      
+      // Set up the file URI in the app's cache directory
+      const fileUri = `${FileSystem.cacheDirectory}${filename}`;
+      
+      // Download the image
+      const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
+      
+      if (downloadResult.status !== 200) {
+        throw new Error('Failed to download image');
+      }
+      
+      // Save the image to the media library
+      const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
+      
+      // Create an album if it doesn't exist and add the asset to it
+      const album = await MediaLibrary.getAlbumAsync('AI Generated Images');
+      if (album === null) {
+        await MediaLibrary.createAlbumAsync('AI Generated Images', asset, false);
+      } else {
+        await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+      }
+      
+      Alert.alert(
+        'Success',
+        'Image saved to your gallery in the "AI Generated Images" album',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error saving image:', error);
+      Alert.alert(
+        'Download Failed',
+        'Could not save the image to your device. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const handleImageError = () => {
@@ -111,8 +167,16 @@ export default function ImageDisplay({ imageUrl, isLoading, error, prompt }: Ima
           <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
             <Ionicons name="share-outline" size={24} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={handleSave}>
-            <Ionicons name="download-outline" size={24} color="#fff" />
+          <TouchableOpacity 
+            style={[styles.iconButton, downloading && styles.iconButtonDisabled]} 
+            onPress={handleSave}
+            disabled={downloading}
+          >
+            {downloading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="download-outline" size={24} color="#fff" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -227,5 +291,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
+  },
+  iconButtonDisabled: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
 });
