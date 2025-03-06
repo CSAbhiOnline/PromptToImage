@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, Dimensions, TouchableOpacity, Share, Alert } from 'react-native';
-import { Image } from 'expo-image';
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  ActivityIndicator, 
+  Dimensions, 
+  TouchableOpacity, 
+  Share, 
+  Alert,
+  Image
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface ImageDisplayProps {
@@ -88,8 +97,7 @@ export default function ImageDisplay({ imageUrl, isLoading, error, prompt }: Ima
         <Image
           source={{ uri: imageUrl }}
           style={styles.image}
-          contentFit="cover"
-          transition={300}
+          resizeMode="cover"
           onError={handleImageError}
         />
         {prompt && (

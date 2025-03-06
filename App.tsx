@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, SafeAreaView, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import PromptInput from './components/PromptInput';
 import ImageDisplay from './components/ImageDisplay';
-import { generateImage, checkImageAvailability } from './services/imageGenerationService';
+import { generateImage } from './services/imageGenerationService';
 
 export default function App() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -24,16 +24,7 @@ export default function App() {
         setError(result.error);
       } else if (result.imageUrl) {
         // Add a small delay to allow the image to be generated
-        setTimeout(async () => {
-          // Optional: Check if the image is available
-          // const isAvailable = await checkImageAvailability(result.imageUrl!);
-          // if (isAvailable) {
-          //   setImageUrl(result.imageUrl);
-          // } else {
-          //   setError('Image generation failed. Please try again with a different prompt.');
-          // }
-          
-          // Since Pollinations.ai generates on demand, we can just set the URL
+        setTimeout(() => {
           setImageUrl(result.imageUrl);
           setIsLoading(false);
         }, 1500); // Small delay for better UX
