@@ -9,11 +9,13 @@ import {
   Share, 
   Alert,
   Image,
-  Platform
+  Platform,
+  Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
+import { isWeb, downloadImageOnWeb, openImageInNewTab } from '../utils/webPolyfill';
 
 interface ImageDisplayProps {
   imageUrl: string | null;
@@ -34,6 +36,12 @@ export default function ImageDisplay({ imageUrl, isLoading, error, prompt }: Ima
     if (!imageUrl) return;
     
     try {
+      // For web, open in a new tab as Share API might not be available
+      if (isWeb()) {
+        openImageInNewTab(imageUrl);
+        return;
+      }
+      
       await Share.share({
         url: imageUrl,
         message: `AI generated image for: "${prompt}" - Created with Pollinations.ai`,
@@ -44,12 +52,13 @@ export default function ImageDisplay({ imageUrl, isLoading, error, prompt }: Ima
     }
   };
 
-  const handleSave = async () => {
-    if (!imageUrl) return;
+  const downloadImageOnNative = async (url: string) => {
+    if (!FileSystem || !MediaLibrary) {
+      console.error('FileSystem or MediaLibrary not available');
+      return false;
+    }
     
     try {
-      setDownloading(true);
-      
       // Request permissions first
       const { status } = await MediaLibrary.requestPermissionsAsync();
       
@@ -59,8 +68,7 @@ export default function ImageDisplay({ imageUrl, isLoading, error, prompt }: Ima
           'Please grant permission to save images to your device.',
           [{ text: 'OK' }]
         );
-        setDownloading(false);
-        return;
+        return false;
       }
       
       // Create a filename based on the prompt and current time
@@ -72,7 +80,7 @@ export default function ImageDisplay({ imageUrl, isLoading, error, prompt }: Ima
       const fileUri = `${FileSystem.cacheDirectory}${filename}`;
       
       // Download the image
-      const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
+      const downloadResult = await FileSystem.downloadAsync(url, fileUri);
       
       if (downloadResult.status !== 200) {
         throw new Error('Failed to download image');
@@ -94,11 +102,55 @@ export default function ImageDisplay({ imageUrl, isLoading, error, prompt }: Ima
         'Image saved to your gallery in the "AI Generated Images" album',
         [{ text: 'OK' }]
       );
+      return true;
     } catch (error) {
       console.error('Error saving image:', error);
       Alert.alert(
         'Download Failed',
         'Could not save the image to your device. Please try again.',
+        [{ text: 'OK' }]
+      );
+      return false;
+    }
+  };
+
+  const handleSave = async () => {
+    if (!imageUrl) return;
+    
+    try {
+      setDownloading(true);
+      
+      // Create a filename based on the prompt and current time
+      const timestamp = new Date().getTime();
+      const promptText = prompt ? prompt.substring(0, 20).replace(/[^a-zA-Z0-9]/g, '_') : 'ai_image';
+      const filename = `${promptText}_${timestamp}.jpg`;
+      
+      let success = false;
+      
+      // Handle download differently based on platform
+      if (Platform.OS === 'web' || isWeb()) {
+        success = await downloadImageOnWeb(imageUrl, filename);
+        
+        // If direct download fails, try opening in a new tab
+        if (!success) {
+          success = openImageInNewTab(imageUrl);
+        }
+      } else {
+        success = await downloadImageOnNative(imageUrl);
+      }
+      
+      if (!success) {
+        Alert.alert(
+          'Download Failed',
+          'Could not download the image. Try right-clicking or long-pressing on the image to save it manually.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error in handleSave:', error);
+      Alert.alert(
+        'Download Failed',
+        'Could not save the image. Please try again or long-press on the image to save it manually.',
         [{ text: 'OK' }]
       );
     } finally {
