@@ -15,7 +15,7 @@
     "preset": "jest-expo"
   },
   "scripts": {
-  "build": "expo export:web",
+  "build": "expo build:web",
   "deploy": "gh-pages -d dist"
 },
   "dependencies": {
