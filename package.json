@@ -14,6 +14,10 @@
   "jest": {
     "preset": "jest-expo"
   },
+  "scripts": {
+  "build": "expo export:web",
+  "deploy": "gh-pages -d dist"
+},
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
     "@react-navigation/bottom-tabs": "^7.2.0",
