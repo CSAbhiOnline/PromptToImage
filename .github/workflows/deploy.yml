@@ -11,12 +11,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: Appacella  # ✅ Ensure the correct branch is used
 
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: 18
           cache: 'yarn'
@@ -31,7 +31,7 @@ jobs:
         run: mv web-build public  # GitHub Pages expects "public" folder
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2  # ✅ Correct action for GitHub Pages
+        uses: actions/upload-pages-artifact@v3  # ✅ Correct action for GitHub Pages
         with:
           path: public  # Upload the "public" folder
 
