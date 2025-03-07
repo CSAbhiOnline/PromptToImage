@@ -24,7 +24,7 @@ jobs:
         run: yarn install
 
       - name: Build Expo Web
-        run: npx expo export:web
+        run: npx expo build:web
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
