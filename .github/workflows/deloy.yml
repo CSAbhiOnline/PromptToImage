@@ -5,7 +5,10 @@ on:
     branches:
       - Appacella  # Adjust if your branch name is different
 
-
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
