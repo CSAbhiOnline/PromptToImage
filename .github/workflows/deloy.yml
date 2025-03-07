@@ -1,0 +1,49 @@
+name: Deploy Expo Web to GitHub Pages
+
+on:
+  push:
+    branches:
+      - Appacella  # Adjust if your branch name is different
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16  # Ensure this matches your project requirement
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build Expo Web
+        run: npx expo export:web
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: web-build
+          path: ./dist  # Ensure this is the correct output directory
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: web-build
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v3
