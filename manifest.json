@@ -1,0 +1,9 @@
+{
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "lang": "en",
+  "name": "AI Image Generator",
+  "short_name": "AI Image Generator",
+  "start_url": "/?utm_source=web_app_manifest",
+  "orientation": "portrait"
+}
