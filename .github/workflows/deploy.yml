@@ -23,7 +23,7 @@ jobs:
         run: yarn install
 
       - name: Build for web
-        run: yarn build
+        run: yarn expo build:web
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
